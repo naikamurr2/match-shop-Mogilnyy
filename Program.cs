@@ -132,6 +132,37 @@ var huntingBox   = db.Products.First(p => p.Name == "Охотничьи");
 PlaceOrder(db, buyerAnna, fireplaceBox, 2);    // хватает: 50 → 48
 PlaceOrder(db, buyerAnna, huntingBox, 50);     // не хватает: на складе только 10
 
+Console.WriteLine("=== Шаг 6 ===");
+
+// Пример: удаляем Ольгу (у неё нет заказов)
+var leaving = db.Customers.First(c => c.Name == "Ольга Смирнова");
+db.Customers.Remove(leaving);
+db.SaveChanges();
+
+// Задание: удалить все товары, которых нет на складе
+var emptyProducts = db.Products.Where(p => p.Stock == 0).ToList();
+db.Products.RemoveRange(emptyProducts);
+db.SaveChanges();
+Console.WriteLine($"Товаров осталось: {db.Products.Count()}");
+
+// Усложнение: удаляем покупателя, у которого есть заказы
+Console.WriteLine($"Заказов до удаления: {db.Orders.Count()}");
+
+var offended = db.Customers.First(c => c.Name == "Иван Петров");
+db.Customers.Remove(offended);
+db.SaveChanges();
+
+Console.WriteLine($"Заказов после удаления: {db.Orders.Count()}");
+
+// Что стало с заказами: они тоже удалились.
+// Почему: в Order внешний ключ CustomerId обязательный (int, а не int?).
+// EF Core для обязательной связи по умолчанию включает каскадное удаление (ON DELETE CASCADE):
+// при удалении покупателя удаляются все его заказы.
+// Для магазина это плохо: вместе с покупателем пропадает история продаж,
+// выручка по прошлым заказам, статистика по товарам.
+// Лучше не удалять покупателя физически, а помечать как неактивного (например, поле IsDeleted),
+// либо запретить удаление, пока есть заказы (DeleteBehavior.Restrict).
+
 // Name: text NOT NULL, а Description: text (без NOT NULL).
 // string без "?" - обязательное поле, база не разрешит оставить его пустым (NULL).
 // string? - необязательное поле: описание может отсутствовать, поэтому NULL разрешён.
