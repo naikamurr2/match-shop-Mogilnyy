@@ -11,4 +11,6 @@ public class ShopContext : DbContext
         options.UseNpgsql("Host=localhost;Database=match_shop;Username=postgres;Password=postgres");
         options.LogTo(Console.WriteLine, LogLevel.Information);
     }
+    public DbSet<Order> Orders { get; set; }
 }
+
