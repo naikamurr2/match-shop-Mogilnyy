@@ -81,6 +81,57 @@ foreach (var o in allOrders)
 var revenue = allOrders.Sum(o => o.Product.Price * o.Quantity);
 Console.WriteLine($"Общая выручка: {revenue} ₽");
 
+Console.WriteLine("=== Шаг 5 ===");
+
+// Пример: новый телефон Ивана
+var ivanToChange = db.Customers.First(c => c.Name == "Иван Петров");
+ivanToChange.Phone = "+7 900 999-00-00";
+db.SaveChanges();
+
+// Задание 1: все спички дороже на 10%
+foreach (var p in db.Products.ToList())
+    p.Price *= 1.1m;
+
+// Задание 2: один товар закончился
+var soldOut = db.Products.First(p => p.Name == "Сувенирные");
+soldOut.Stock = 0;
+
+db.SaveChanges();   // один SaveChanges отправит все изменения
+
+static void PlaceOrder(ShopContext db, Customer buyer, Product item, int boxes)
+{
+    if (item.Stock < boxes)
+    {
+        Console.WriteLine("Недостаточно на складе");
+        return;   // ничего не меняем
+    }
+
+    db.Orders.Add(new Order
+    {
+        Customer = buyer,
+        Product = item,
+        Quantity = boxes,
+        OrderDate = DateTime.UtcNow
+    });
+    item.Stock -= boxes;   // уменьшаем остаток
+
+    // Заказ и новый остаток сохраняются вместе, одним SaveChanges.
+    // Это одна транзакция: либо записалось и то и другое, либо ничего.
+    // Если сохранять по отдельности, при сбое между ними получится заказ без списания
+    // со склада (или списание без заказа), и учёт разойдётся с реальностью.
+    db.SaveChanges();
+
+    Console.WriteLine($"Заказ оформлен: {buyer.Name} — {item.Name} — {boxes} шт. Остаток: {item.Stock}");
+}
+
+// Проверка двух случаев
+var buyerAnna    = db.Customers.First(c => c.Name == "Анна Козлова");
+var fireplaceBox = db.Products.First(p => p.Name == "Каминные");
+var huntingBox   = db.Products.First(p => p.Name == "Охотничьи");
+
+PlaceOrder(db, buyerAnna, fireplaceBox, 2);    // хватает: 50 → 48
+PlaceOrder(db, buyerAnna, huntingBox, 50);     // не хватает: на складе только 10
+
 // Name: text NOT NULL, а Description: text (без NOT NULL).
 // string без "?" - обязательное поле, база не разрешит оставить его пустым (NULL).
 // string? - необязательное поле: описание может отсутствовать, поэтому NULL разрешён.
