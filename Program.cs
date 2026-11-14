@@ -37,6 +37,50 @@ db.Orders.AddRange(
 
 db.SaveChanges();   // только здесь данные уходят в базу
 
+Console.WriteLine("=== Шаг 4 ===");
+
+// Пример: покупатели из Омска по алфавиту
+var omsk = db.Customers
+    .Where(c => c.City == "Омск")
+    .OrderBy(c => c.Name)
+    .ToList();
+foreach (var c in omsk)
+    Console.WriteLine($"{c.Name}, {c.Phone}");
+
+// Задание 1: спички дешевле 100 ₽ от дешёвых к дорогим
+var cheap = db.Products
+    .Where(p => p.Price < 100)
+    .OrderBy(p => p.Price)
+    .ToList();
+Console.WriteLine("Дешевле 100 ₽:");
+foreach (var p in cheap)
+    Console.WriteLine($"{p.Name} — {p.Price} ₽");
+
+// Задание 2: сколько видов спичек есть на складе
+var inStockCount = db.Products.Count(p => p.Stock > 0);
+Console.WriteLine($"Видов спичек на складе: {inStockCount}");
+
+// Задание 3: три самых дорогих товара
+var top3 = db.Products
+    .OrderByDescending(p => p.Price)
+    .Take(3)
+    .ToList();
+Console.WriteLine("Три самых дорогих:");
+foreach (var p in top3)
+    Console.WriteLine($"{p.Name} — {p.Price} ₽");
+
+// Усложнение: все заказы одной строкой и общая выручка
+var allOrders = db.Orders
+    .Include(o => o.Customer)
+    .Include(o => o.Product)
+    .ToList();
+Console.WriteLine("Все заказы:");
+foreach (var o in allOrders)
+    Console.WriteLine($"{o.Customer.Name} — {o.Product.Name} — {o.Quantity} шт. — {o.Product.Price * o.Quantity} ₽");
+
+var revenue = allOrders.Sum(o => o.Product.Price * o.Quantity);
+Console.WriteLine($"Общая выручка: {revenue} ₽");
+
 // Name: text NOT NULL, а Description: text (без NOT NULL).
 // string без "?" - обязательное поле, база не разрешит оставить его пустым (NULL).
 // string? - необязательное поле: описание может отсутствовать, поэтому NULL разрешён.
